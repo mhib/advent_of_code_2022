@@ -50,6 +50,7 @@ class LastNode < Snake
 	end
 
 	attr_reader :visited
+
 	def initialize
 		super(FakeNode.new)
 		@visited = Set[[0, 0]]
