@@ -15,11 +15,9 @@ class Cpu
 
 	def new_instruction!(cost, delta)
 		@queue << Task.new(cost, delta)
-		@cycle_values << @x
-		poll_queue!
 	end
 
-	def finish_queue!
+	def interpret_queue!
 		while @queue.any?
 			@queue.first.cost -= 1
 			if @queue.first.cost > 0
@@ -29,15 +27,6 @@ class Cpu
 			@cycle_values << @x
 			@x += @queue.shift.delta
 		end
-	end
-
-	private
-
-	def poll_queue!
-		return if @queue.empty?
-		@queue.first.cost -= 1
-		return unless @queue.first.cost.zero?
-		@x += @queue.shift.delta
 	end
 end
 
@@ -50,7 +39,7 @@ File.readlines('in.txt').each do |line|
 		@cpu.new_instruction!(2, delta.to_i)
 	end
 end
-@cpu.finish_queue!
+@cpu.interpret_queue!
 
 rows = 0.step(200, 40).map do |row_start|
 	res = String.new("")
