@@ -1,7 +1,5 @@
 require 'set'
 
-# ~4 times faster than version with only no-flow-compression
-
 Node = Struct.new(:flow, :neis)
 
 @nodes = {}
@@ -29,7 +27,7 @@ def get_distances(node)
 			next unless visited.add?(nei)
 			nei_node = @nodes[nei]
 			res[nei] = dist + 1 if nei_node.flow != 0
-			q << [nei, dist + 1]
+			q << [nei, dist + 1] if nei_node.flow == 0
 		end
 	end
 	res.to_a
@@ -41,36 +39,47 @@ end.compact]
 @node_keys = @nodes.keys.sort
 @nodes = @nodes.sort.map { |e| e[1] }
 @nodes.each { |node| node.neis.map! { |nei| [@node_keys.bsearch_index { |x| x >= nei[0] }, nei[1]] } }
+@whole_set_flag = @nodes.each_index.reduce(0) { |m, e| @nodes[e].flow > 0 ? m | (1 << e) : m }
 
+
+# O(nodes * 2^nodes * days * players)
 @states = {}
 State = Struct.new(:current, :opened, :left, :players)
-def visit(state)
-	return 0 if state.opened == @whole_set_flag
 
+def visit(state)
+	if @whole_set_flag == state.opened
+		return 0
+	end
 	if state.left == 0
 		return 0 if state.players == 1
 		val = visit(State.new(0, state.opened, 26, 1))
 		return val
 	end
+
 	if (val = @states[state])
 		return val
 	end
+
+	node = @nodes[state.current]
 	max = 0
-	@nodes[state.current].neis.each do |nei, dist|
-		next if dist + 1 > state.left
-		next if state.opened & (1 << nei) != 0
-		node = @nodes[nei]
-		added = node.flow * (state.left - dist - 1)
-		max = [
-			max,
-			added + visit(State.new(nei, state.opened | (1 << nei), state.left - dist - 1, state.players))
-		].max
+	if node.flow > 0 && (state.opened & (1 << state.current)) == 0
+		added = node.flow * (state.left - 1)
+		max = added + visit(State.new(state.current, (state.opened | (1 << state.current)), state.left - 1, state.players))
+	end
+	node.neis.each do |nei, dist|
+		next if dist > state.left
+		val = visit(State.new(nei, state.opened, state.left - dist, state.players))
+		if val > max
+			max = val
+		end
 	end
 	@states[state] = max
 end
 
+p @nodes
 
 # Part 1
-# p visit(State.new(0, 1, 30, 1))
+# p visit(State.new(0, 0, 30, 1))
 
-p visit(State.new(0, 1, 26, 2))
+# Part 2
+p visit(State.new(0, 0, 26, 2))
