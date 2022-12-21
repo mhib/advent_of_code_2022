@@ -24,6 +24,12 @@ end
 
 NON_RESULTABLE_METAL_MAX_IDX = 2
 ROBOT_MAX_IDX = 3
+
+# Heuristics:
+# 1. It does not make sense to create more robots than maximum of required resources for the given robot kind, as we cannot spend that resource faster than that
+# 2. It does not make a new robot, when we already would be able to spend max of that resource each turn till the end
+# 3. When left == 2 it does not make sense to build any robot, but geode, as it we wont have time to spend the created resource(i.e. building not-geode is as good as doing nothing)
+# 4. It does not make sense to do nothing when we can create all possible robots
 def get_blue_print_value(blueprint, steps)
 	cache = {}
 
@@ -32,7 +38,6 @@ def get_blue_print_value(blueprint, steps)
 	end
 
 	visit = lambda do |state|
-		return 0 if state.left == 0
 		return state.robots.last if state.left == 1
 		if (val = cache[state])
 			return val
@@ -54,7 +59,7 @@ def get_blue_print_value(blueprint, steps)
 
 		max = 0
 
-		if state.left > 2 && state.robots[0] < maxes[0] && state.robots[0] * state.left + state.metals[0] < maxes[0] * state.left && state.metals[0] >= blueprint[0][0]
+		if state.left > 2 && state.robots[0] < maxes[0] && state.robots[0] * state.left + state.metals[0] < maxes[0] * (state.left - 1) && state.metals[0] >= blueprint[0][0]
 			metals = state.metals.dup
 			metals[0] -= blueprint[0][0]
 
@@ -67,7 +72,7 @@ def get_blue_print_value(blueprint, steps)
 			max = [visit.(State.new(state.left - 1, robots, metals)), max].max
 		end
 
-		if state.left > 2 && state.robots[1] < maxes[1] && state.robots[1] * state.left + state.metals[1] < maxes[1] * state.left && state.metals[0] >= blueprint[1][0]
+		if state.left > 2 && state.robots[1] < maxes[1] && state.robots[1] * state.left + state.metals[1] < maxes[1] * (state.left - 1) && state.metals[0] >= blueprint[1][0]
 			metals = state.metals.dup
 			metals[0] -= blueprint[1][0]
 
@@ -80,7 +85,7 @@ def get_blue_print_value(blueprint, steps)
 			max = [visit.(State.new(state.left - 1, robots, metals)), max].max
 		end
 
-		if state.left > 2 && state.robots[2] < maxes[2] && state.robots[2] * state.left + state.metals[2] < maxes[2] * state.left && state.metals[0] >= blueprint[2][0] && state.metals[1] >= blueprint[2][1]
+		if state.left > 2 && state.robots[2] < maxes[2] && state.robots[2] * state.left + state.metals[2] < maxes[2] * (state.left - 1) && state.metals[0] >= blueprint[2][0] && state.metals[1] >= blueprint[2][1]
 			metals = state.metals.dup
 			metals[0] -= blueprint[2][0]
 			metals[1] -= blueprint[2][1]
