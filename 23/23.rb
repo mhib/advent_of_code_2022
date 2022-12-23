@@ -15,10 +15,6 @@ def get_all_neis(y, x)
 	ALL_NEIS.map { |delta_y, delta_x| [y + delta_y, x + delta_x] }
 end
 
-def get_all_neis(y, x)
-	ALL_NEIS.map { |delta_y, delta_x| [y + delta_y, x + delta_x] }
-end
-
 Direction = Struct.new(:delta, :neis) do
 	def get_neis(y, x)
 		neis.map do |dy, dx|
